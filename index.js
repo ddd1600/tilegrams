@@ -4,7 +4,7 @@ import metrics from './source/Metrics'
 import exporter from './source/file/Exporter'
 import importer from './source/file/Importer'
 import datasetResource from './source/resources/DatasetResource'
-import mapResource from './source/resources/USMapResource'
+import geographyResource from './source/resources/GeographyResource'
 import tilegramResource from './source/resources/TilegramResource'
 import gridGeometry from './source/geometry/GridGeometry'
 import {startDownload, isDevEnvironment} from './source/utils'
@@ -18,6 +18,8 @@ const CARTOGRAM_COMPUTE_FPS = 60.0
 let cartogramComputeTimer
 
 let importing = false
+
+const defaultGeography = geographyResource.getMapResource('United States')
 
 function selectDataset(dataset) {
   importing = false
@@ -38,8 +40,20 @@ function updateUi() {
 }
 
 function selectGeography(geography) {
+  importing = false
   ui.setGeography(geography)
-  updateUi()
+  const dataset = datasetResource.getDatasetsByGeography(geography)[0].data
+  ui.setSelectedDataset(dataset)
+  canvas.computeCartogram(dataset, geography)
+  clearInterval(cartogramComputeTimer)
+  cartogramComputeTimer = setInterval(() => {
+    const iterated = canvas.iterateCartogram(geography)
+    if (iterated) {
+      canvas.updateTilesFromMetrics()
+    }
+  }, 1000.0 / CARTOGRAM_COMPUTE_FPS)
+  // TODO: update ui with worldwide data
+  // updateUi()
 }
 
 function loadTopoJson(topoJson) {
@@ -105,7 +119,7 @@ function init() {
   ui.setGeographySelectCallback(selectGeography)
 
   // populate
-  ui.setGeos(mapResource.getUniqueFeatureIds())
+  ui.setGeos(defaultGeography.getUniqueFeatureIds())
   ui.setDatasetLabels(datasetResource.getLabels())
   ui.setTilegramLabels(tilegramResource.getLabels())
   loadTopoJson(tilegramResource.getTilegram(0))
