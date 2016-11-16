@@ -1,6 +1,6 @@
 import {csvParseRows} from 'd3-dsv'
 
-import mapResource from './USMapResource'
+import geographyResource from './GeographyResource'
 
 import populationCsv from '../../data/population-by-state.csv'
 import electoralCollegeCsv from '../../data/electoral-college-votes-by-state.csv'
@@ -12,25 +12,28 @@ class DatasetResource {
     this._datasets = [
       {
         label: 'U.S. Population 2016',
-        data: this.parseCsv(populationCsv),
+        data: populationCsv,
         geography: 'United States',
       },
       {
         label: 'U.S. Electoral College 2016',
-        data: this.parseCsv(electoralCollegeCsv),
+        data: electoralCollegeCsv,
         geography: 'United States',
       },
       {
         label: 'U.S. GDP 2015 (Millions)',
-        data: this.parseCsv(gdpCsv),
+        data: gdpCsv,
         geography: 'United States',
       },
       {
         label: 'World Population',
-        data: this.parseCsv(populationWorld),
+        data: populationWorld,
         geography: 'World'
       },
     ]
+    this._datasets.forEach((dataset) => {
+      dataset.data = this.parseCsv(dataset.data, false, dataset.geography)
+    })
     this._selectedDatasetIndex = 2
   }
 
@@ -38,8 +41,8 @@ class DatasetResource {
     return fips && fips.length < 2 ? `0${fips}` : fips
   }
 
-  parseCsv(csv, customUpload) {
-    const features = mapResource.getUniqueFeatureIds()
+  parseCsv(csv, customUpload, geography) {
+    const features = geographyResource.getMapResource(geography).getUniqueFeatureIds()
     const badMapIds = []
     const badValueIds = []
     let parsed = csvParseRows(csv, d => [this._validateFips(d[0]), parseFloat(d[1])])

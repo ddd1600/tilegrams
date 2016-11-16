@@ -28,7 +28,7 @@ export default class MapGraphic extends Graphic {
   /** Apply topogram on topoJson using data in properties */
   computeCartogram(dataset, geography) {
     topogram.value(
-      feature => dataset.find(data => data[0] === feature.id)[1]
+      feature => dataset.find(data => data[0] == feature.id)[1]
     )
     this._iterationCount = 0
 
@@ -59,7 +59,10 @@ export default class MapGraphic extends Graphic {
     if (dataset.length !== baseMapLength) {
       const statesWithData = dataset.map(data => data[0])
       filteredGeometries = baseMapTopoJson.objects[mapResource.getObjectId()].geometries
-        .filter(geom => statesWithData.indexOf(geom.id) > -1)
+        .filter(geom => {
+          return statesWithData.indexOf(geom.id) > -1 ||
+            statesWithData.indexOf('' + geom.id) > -1
+        })
       filteredTopoJson = JSON.parse(JSON.stringify(baseMapTopoJson)) // clones the baseMap
       // only pass filtered geometries to topogram generator
       filteredTopoJson.objects[mapResource.getObjectId()].geometries = filteredGeometries
@@ -81,8 +84,10 @@ export default class MapGraphic extends Graphic {
     }
     const mapResource = geographyResource.getMapResource(geography)
     topogram.projection(x => x)
+    debugger
     const topoJson = exporter.fromGeoJSON(this._stateFeatures, mapResource.getObjectId())
     this._stateFeatures = topogram(topoJson, topoJson.objects[mapResource.getObjectId()].geometries)
+    debugger
     this._precomputeBounds()
     this._iterationCount++
     return true
@@ -111,6 +116,7 @@ export default class MapGraphic extends Graphic {
           canvasDimensions.height * 0.7,
         ])
     }
+    console.log('update projection')
     topogram.projection(projection)
   }
 
